@@ -1,0 +1,66 @@
+---
+title: How good is the model?
+author: Arthur Andrews
+format: html
+editor: source
+embed-resources: true
+fig-format: svg
+fig-width: 10
+fig-height: 6
+code-fold: show
+code-tools: true
+toc: true
+toc-location: left
+grid: 
+  body-width: "9in"
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(yardstick)
+```
+
+```{r}
+load("../../data/ops_models.RData")
+#load("../../data/hitting_stats.RData")
+```
+
+```{r}
+form <- formula(model2)
+
+model <- lmer(form, data = hit |> filter(season < 2024))
+```
+
+```{r}
+model
+```
+
+```{r}
+hit <- hit |> 
+  group_by(name) |> 
+  mutate(
+    lagged_ops = lag(ops),
+    mean_ops = mean(ops[season < 2024])
+  ) |> 
+  ungroup() |> 
+  mutate(population_ops = mean(ops[season < 2024]))
+```
+
+```{r}
+hit$pred_ops <- predict(model, hit)
+```
+
+```{r}
+hit |> 
+  filter(season == 2024) |> 
+  select(player = name, contains("ops")) |> 
+  pivot_longer(-c(player, ops)) |> 
+  group_by(name) |> 
+  summarize(
+    rmse = rmse_vec(ops, value),
+    r2 = rsq_trad_vec(ops, value)
+  ) |> 
+  arrange(rmse)
+```
+

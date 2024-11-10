@@ -1,0 +1,4 @@
+_site
+*.html
+lib
+.Rproj.user

@@ -1,0 +1,450 @@
+---
+title: MLB player aging
+author: Arthur Andrews
+format: html
+editor: source
+embed-resources: true
+fig-format: svg
+fig-width: 10
+fig-height: 6
+code-fold: show
+code-tools: true
+toc: true
+toc-location: left
+grid: 
+  body-width: "9in"
+---
+
+![](data/player_aging3.png)
+
+# Goals
+
+  - Study the aging of MLB player performance 
+  - Reveal the bias of estimating aging curves with simple aggregation
+  - Demonstrate a statistics model for aging using splines and mixed effects modeling
+  - Show some players whose aging curves are unusual or exceptional
+  
+# Purpose
+
+This is a hobby project.
+
+# Tools
+
+::: {layout-ncol=4}
+
+![](data/R_logo.svg.png){width="50%"}
+
+![](data/baseballr_logo.png){width="50%"}
+
+![](data/logo-quarto.png){width="50%"}
+
+![](data/github-pages-examples.png){width="50%"}
+
+::::
+
+  - **R** - *programming language*
+  - **baseballr** - *an R interface to MLB data*
+  - **quarto** - *publishing data-rich documents from code*
+  - **GitHub Pages** - *hosting code and web pages*
+
+
+# Code
+
+By default, the R code is displayed.  If you wish, you may hide it from the "Code" menu in the top-right.
+
+# Dependencies
+
+```{r load-packages}
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(broom.mixed)
+library(janitor)
+library(splines)
+library(factoextra)
+library(reactable)
+library(ggsci)
+library(magrittr, include.only = "set_rownames")
+library(lme4, exclude = c("expand", "pack", "unpack"))
+library(htmltools, include.only = "css")
+library(pracma, include.only = c("fzero", "fderiv"))
+
+theme_set(theme_bw(base_size = 12))
+```
+
+```{r load-data}
+load("../../data/hitting_stats.RData")
+```
+
+
+# Declare functions
+
+For adding model predictions to a data frame and tabulating results in html tables.
+
+```{r functions}
+add_prediction <- function(hit, model, ...) {
+  hit$pred_ops <- predict(model, hit, ...)
+  hit
+}
+
+
+tabulate <- partial(
+  reactable,
+  fullWidth = FALSE, highlight = TRUE, style = css(fontSize = "80%")
+)
+```
+
+
+# Data set
+
+I accessed MLB hitter data from 2005 - 2023 using the excellent `baseballr` package, which offers convenient interfaces to the Statcast APIs to Baseball Reference data.
+
+I include 
+  - seasons with at least 200 plate appearances
+  - and hitters with at least 5 seasons 
+
+The data loaded by this notebook was first prepared in a separate script that you may find in the code repository: `query_mlb.R`.
+
+```{r}
+hit <- hit |> 
+  filter(n_seasons >= 5) 
+```
+
+```{r}
+hit |> 
+  group_by(season) |> 
+  summarize(rows = n(), hitters = n_distinct(id)) |> 
+  tabulate(defaultPageSize = Inf)
+```
+
+
+Print a glimpse of the data to see the schema and number of rows and columns.
+
+```{r}
+glimpse(hit)
+```
+
+# Splines
+
+I will use three B-splines to provide a flexible basis for describing the nonlinear aging curve.
+
+Each of these splines is a smooth function of player age, and by including the split fits as predictor variables in a model, the model will be able to describe a nonlinear relationship between age and OPS.  The coefficients will define the shape of the relationship.  
+
+With the `splines` package, the spline definition can very conveniently go inside the model formula.
+
+
+## Visualize the spline functions
+
+```{r}
+bind_cols(
+  hit |> 
+    select(age),
+  hit$centered_age |> 
+    bs(3)
+) |> 
+  pivot_longer(-age, names_to = "spline") |> 
+  ggplot() + aes(age, value, color = spline) + geom_line()
+```
+
+# Model
+
+This model describes the player `OPS` as a function of age (via the splines) and player.  The player `name` is a random effect in the model.
+
+Random effects in statistics are a good way to include categorical variables with many levels as predictors.
+
+```{r}
+model1 <- lmer(
+  ops ~ (1 | name) + bs(centered_age, df = 3),
+  data = hit
+)
+
+model1
+```
+
+We can predict the aging curve for an average player by including only the model's fixed effects.  We can see an increase in performance until the player's late 20's and then a steeper decrease in their mid-30's.
+
+```{r}
+pal <- pal_d3()(10)
+
+mean_player <- hit |> 
+  add_prediction(model1, re.form = ~0)
+
+mean_player |> 
+  ggplot() + aes(age, pred_ops) + geom_line(color = pal[2]) + 
+  labs(title = "modeled aging curve", y = "ops") +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.001))
+```
+
+# Model coefficients
+
+## Fixed effects
+
+These coefficients are what form the modeled aging curve.
+
+```{r}
+model1 |> 
+  tidy("fixed") |> 
+  mutate(across(where(is.numeric), \(x) round(x, 3))) |> 
+  tabulate()
+```
+
+## Random effects
+
+The random effect intercept is the +/- of each player's aging curve relative to the mean player.  Unsurprisingly, tabulating these players by decreasing coefficients lists the greatest hitters of the era.
+
+You may wish to sort this table by `estimate` or search for a player name in the `level` search box.
+
+```{r}
+model1 |> 
+  tidy("ran_vals") |> 
+  mutate(across(where(is.numeric), \(x) round(x, 3))) |> 
+  arrange(desc(estimate)) |> 
+  tabulate(columns = list(level = colDef(minWidth = 150, filterable = TRUE)))
+```
+
+## Calculating the age of peack performance
+
+To calculate the age of peak OPS, we can numerically solving for the zero of the 1st derivative with respect to age.  
+
+```{r}
+predict_ops <- function(age, model) {
+  tibble(centered_age = age - mean(hit$age)) |> 
+    predict(object = model, re.form = ~0)
+}
+
+calc_ops_deriv <- function(age, model) {
+  partial(predict_ops, model = model) |> # now a function of only age
+    fderiv(age)
+}
+
+calc_zero_deriv <- function(model) {
+  partial(calc_ops_deriv, model = model) |> # now a function of only age
+    fzero(x = 30) |> 
+    pluck("x")
+}
+
+cat("age of peak performance: ")
+
+model1 |> 
+  calc_zero_deriv() |> 
+  cat()
+```
+
+# Aggregation
+
+Instead of performing the more complex steps of engineering the splines and fitting the statistical model, it might be tempting to simply average OPS by player age to see the aging curve.  
+
+This requires no statistics, but we'll quickly find a problem.
+
+```{r}
+grouped_hit <- hit |> 
+  group_by(age = round(age)) |> 
+  mutate(player_contribution = pa / sum(pa)) 
+
+aggregate_player <- grouped_hit |> 
+  summarize(
+    across(c(avg, obp, slg, ops), \(x) weighted.mean(x, pa)),
+    .groups = "drop"
+  ) 
+```
+
+```{r}
+aggregate_player |> 
+  ggplot() + aes(age, ops) + geom_line(color = pal[1]) +
+  labs(title = "ops aggregated by player age")
+```
+
+This result looks substantially different from the fit aging curve.
+
+That's because it's subject to an omitted variable bias.  The players at the low age ranges (19, 20) and high (37, 38, ...) are all-star and hall-of-fame caliber players.  They distort the averages in these age ranges.
+
+```{r}
+tabulate_one_age <- function(ages) {
+  grouped_hit |> 
+    filter(age %in% ages) |> 
+    slice_max(player_contribution, n = 5) |> 
+    select(age, name, player_contribution) |> 
+    tabulate(
+      columns = list(
+        name = colDef(minWidth = 150),
+        player_contribution = colDef(
+          "player contribution", 
+          format = colFormat(percent = TRUE, digits = 1)
+        )
+      )
+    )  
+}
+```
+
+::: {layout-ncol=2}
+```{r}
+tabulate_one_age(20)
+```
+
+```{r}
+tabulate_one_age(21)
+```
+
+:::
+
+::: {layout-ncol=2}
+```{r}
+tabulate_one_age(38)
+```
+
+```{r}
+tabulate_one_age(39)
+```
+
+:::
+
+# Model/aggregate comparison
+
+```{r}
+aging <- aggregate_player |> 
+  mutate(
+    centered_age = age - mean(hit$age), 
+    pred_ops = tibble(centered_age) |> 
+      predict(object = model1, re.form = ~0)
+  ) 
+
+aging |> 
+  select(age, modeled = pred_ops, aggregate = ops) |> 
+  pivot_longer(-age) |> 
+  mutate(name = factor(name, c("aggregate", "modeled"))) |> 
+  ggplot() + aes(age, value, color = name) + geom_line() + scale_color_d3() +
+  labs(y = "ops", title = "modeled and aggregate ops aging")
+```
+
+# A more complex model
+
+By including a random slope for `centered_age`, we can allow different players to have different aging curves.
+
+The partial pooling of mixed effects models is really nice for this, because it will penalize really extreme values of this slope.  To me, this is a desirable feature - to keep the slopes realistic, even for players with a smaller amount of data.
+
+Typically, including a random slope requires also adding a corresponding fixed effect.  In this case, however, I will rely on the spline fits to fill the role of the fixed effect.  This will maintain the population mean `centered_age` slope at zero.  
+
+Each player will be given a `centered_age` coefficient which modifies their aging curve.  
+
+```{r}
+model2 <- lmer(
+  ops ~ (centered_age | name) + bs(centered_age, df = 3),
+  data = hit
+) 
+
+model2
+```
+
+
+Looking at the players with the most extreme values of the `centered_age` coefficient is interest: it reveals the players whose performance "aged" the fastest (negative values) and slowest (positive values).
+
+```{r}
+cf <- model2 |> 
+  tidy("ran_vals") |> 
+  filter(term == "centered_age") |> 
+  mutate(across(where(is.numeric), \(x) round(x, 4))) |> 
+  arrange(desc(estimate)) 
+
+cf |> 
+  tabulate(columns = list(level = colDef(minWidth = 150)))
+```
+
+
+In some cases, players aging faster than average is due to historically high peaks, like Miguel Cabrera. 
+
+```{r}
+predict_player <- function(players, model) {
+  
+  mean_player <- hit |> 
+    distinct(age, centered_age) |> 
+    mutate(
+      mean_player = tibble(centered_age) |> 
+        predict(object = model, re.form = ~0)
+    )
+  
+  hit |> 
+    filter(name %in% players) |> 
+    left_join(cf, by = join_by(name == level)) |> 
+    mutate(
+      player = tibble(name, age, centered_age) |> 
+        predict(object = model),
+      name = name |> 
+        reorder(-abs(estimate))
+    ) |> 
+    ggplot() + 
+    aes(x = age, color = "player") + geom_point(aes(y = ops)) + geom_line(aes(y = player)) +
+    geom_line(aes(x = age, y = mean_player, color = "mean_player"), data = mean_player) +
+    scale_color_manual(values = c("player" = "grey30", "mean_player" = pal[2])) +
+    facet_wrap(~name + estimate)
+}
+
+predict_player("Miguel Cabrera", model2)
+```
+
+
+
+## Players aging gracefully
+
+Here are the aging curves for the 16 players with the slowing aging.  Nelson Cruz and Adrian Beltre have the largest positive slopes, and this fits their reputation as late-bloomers.  Jim Thome and David Ortiz remained star players into their late 30's and early 40's.  Jose Altuve and Freddie Freeman are still active players, but are posting peak stats in their mid-30's.
+
+Because I only included data from 2005 - 2023 in my analysis, the early years of some player's careers are missing.
+
+
+```{r}
+#| fig-width: 10
+#| fig-height: 8
+cf |> 
+  slice_max(estimate, n = 16, with_ties = FALSE) |> 
+  pull(level) |> 
+  predict_player(model2)
+```
+
+## Players aging rapidly 
+
+Here are the aging curves for the 16 players with the most rapid aging.  Perhaps speculation on my part, but many of these players were pure power hitters with stout and muscular builds.
+
+In many cases, these were players with All-Star 20's, but average or below-average 30's.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 8
+cf |> 
+  slice_min(estimate, n = 16, with_ties = FALSE) |> 
+  pull(level) |> 
+  predict_player(model2)
+```
+
+# Conclusions
+
+Splines and mixed effects models are a great choice for studying the aging of MLB player performance.
+
+The splines can describe a nonlinear aging curve, and mixed effects models are ideal for working with categorical variables (in this case, player) with many levels.
+
+Including an additional random effect slope for player age elegantly describes a range or spectrum of aging curves, and the results from the model seem consistent with baseball wisdom.
+
+
+# Save the model
+
+```{r}
+save(hit, model1, model2, file = "../../data/ops_models.RData")
+```
+
+
+```{r}
+# model4 <- lmer(
+#   ops ~ (centered_age | position/name) + bs(centered_age, df = 3),
+#   data = hit
+# )
+```
+
+```{r}
+# hit |> 
+#   distinct(position, age, centered_age) |> 
+#   mutate(name = NA_character_) |> 
+#   add_prediction(model4, allow.new.levels = TRUE) |> 
+#   ggplot() + 
+#   aes(age, pred_ops, color = position) + geom_line() #+
+#   #facet_wrap(~position)
+```
+
