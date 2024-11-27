@@ -1,4 +1,6 @@
 _site
+_freeze
 *.html
 lib
 .Rproj.user
+/.quarto/

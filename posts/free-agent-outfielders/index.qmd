@@ -37,12 +37,6 @@ iq <- read_csv("data-inquirer-outfielders.csv", skip = 4) |>
 ```
 
 ```{r}
-iq
-```
-
-
-
-```{r}
 to <- "Tyler O'Neill"
 hit_to <- hit |> 
   filter(n_seasons >= 5 | name == to)
@@ -58,6 +52,8 @@ of <- hit_to |>
   filter(name %in% iq$name) |> 
   mutate(season = as.numeric(season))
 
+# create data frame for future years
+
 of_2024 <- of |> 
   filter(season == 2024)
 
@@ -72,10 +68,21 @@ of_future <- of_2024 |>
 of <- of |> 
   bind_rows(of_future)
 
+# predict ops for future
+
 of$pred_ops <- predict(model3, of)
 ```
 
 ```{r}
+of |> 
+  filter(season == 2024) |> 
+  select(name, player_id = id, team_name, team_id, season, ops) |> 
+  tabulate_players()
+```
+
+
+```{r}
+# it will be easier to tabulate if there is only most recent team name
 of <- of |> 
   group_by(name) |> 
   mutate(across(c(team_name, team_id), \(x) x[season == 2024])) |> 

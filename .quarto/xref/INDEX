@@ -1,5 +1,17 @@
 {
   "about.qmd": {
     "about.html": "25947242"
+  },
+  "posts/free-agent-outfielders/index.qmd": {
+    "index.html": "e1c88f1e"
+  },
+  "posts/first-post/index.qmd": {
+    "index.html": "4c0cfc53"
+  },
+  "posts/how-good/index.qmd": {
+    "index.html": "fcd3bffa"
+  },
+  "index.qmd": {
+    "index.html": "ed33854b"
   }
 }

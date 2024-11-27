@@ -12,7 +12,7 @@ library(htmltools)
 #' @return for length(team_id) == 1, an img tag; otherwise a character vector of html
 make_team_logo <- function(team_id, style = css(height = "25px"), ...) {
   if (length(team_id) == 1) {
-    img(src = str_glue("images/team_logos/{team_id}.svg"), style = style, ...)
+    img(src = str_glue("/images/team_logos/{team_id}.svg"), style = style, ...)
   } else {
     team_id |> 
       map(make_team_logo, style, ...) |> 
@@ -30,7 +30,7 @@ make_team_logo <- function(team_id, style = css(height = "25px"), ...) {
 #' @return for length(player_id) == 1, an img tag; otherwise a character vector of html
 make_player_headshot <- function(player_id, style = css(height = "25px"), ...) {
   if (length(player_id) == 1) {
-    img(src = str_glue("images/player_headshots/{player_id}.png"), style = style, ...)
+    img(src = str_glue("/images/player_headshots/{player_id}.png"), style = style, ...)
   } else {
     player_id |> 
       map(make_player_headshot, style, ...) |> 
@@ -69,6 +69,7 @@ tabulate_players <- function(data, more_columns = NULL, ...) {
   }
   
   cl <- list(
+    team_name = colDef("team"),
     headshot = colDef("", minWidth = 40, maxWidth = 40, html = TRUE),
     logo = colDef("", minWidth = 40, maxWidth = 40, html = TRUE),
     ops = colDef("ops", cell = label_hitting_stat)

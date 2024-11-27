@@ -19,6 +19,7 @@ grid:
 library(tidyverse)
 library(lme4)
 library(yardstick)
+library(splines)
 ```
 
 ```{r}

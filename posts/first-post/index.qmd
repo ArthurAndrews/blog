@@ -15,7 +15,6 @@ grid:
   body-width: "9in"
 ---
 
-![](data/player_aging3.png)
 
 # Goals
 
@@ -32,13 +31,13 @@ This is a hobby project.
 
 ::: {layout-ncol=4}
 
-![](data/R_logo.svg.png){width="50%"}
+![](/images/other/R_logo.png){width="50%"}
 
-![](data/baseballr_logo.png){width="50%"}
+![](/images/other/baseballr_logo.png){width="50%"}
 
-![](data/logo-quarto.png){width="50%"}
+![](/images/other/logo-quarto.png){width="50%"}
 
-![](data/github-pages-examples.png){width="50%"}
+![](/images/other/github-pages-examples.png){width="50%"}
 
 ::::
 
