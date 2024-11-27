@@ -1,0 +1,79 @@
+[
+  {
+    "objectID": "posts/how-good/index.html",
+    "href": "posts/how-good/index.html",
+    "title": "How good is the model?",
+    "section": "",
+    "text": "Code\nlibrary(tidyverse)\n\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.4     ✔ readr     2.1.5\n✔ forcats   1.0.0     ✔ stringr   1.5.1\n✔ ggplot2   3.5.1     ✔ tibble    3.2.1\n✔ lubridate 1.9.3     ✔ tidyr     1.3.1\n✔ purrr     1.0.2     \n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\nℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors\n\n\nCode\nlibrary(lme4)\n\n\nLoading required package: Matrix\n\nAttaching package: 'Matrix'\n\nThe following objects are masked from 'package:tidyr':\n\n    expand, pack, unpack\n\n\nCode\nlibrary(yardstick)\n\n\n\nAttaching package: 'yardstick'\n\nThe following object is masked from 'package:readr':\n\n    spec\n\n\nCode\nlibrary(splines)\n\n\n\n\nCode\nload(\"../../data/ops_models.RData\")\n#load(\"../../data/hitting_stats.RData\")\n\n\n\n\nCode\nform &lt;- formula(model2)\n\nmodel &lt;- lmer(form, data = hit |&gt; filter(season &lt; 2024))\n\n\n\n\nCode\nmodel\n\n\nLinear mixed model fit by REML ['lmerMod']\nFormula: ops ~ (centered_age | name) + bs(centered_age, df = 3)\n   Data: filter(hit, season &lt; 2024)\nREML criterion at convergence: -9209.238\nRandom effects:\n Groups   Name         Std.Dev. Corr\n name     (Intercept)  0.066227     \n          centered_age 0.005827 0.05\n Residual              0.072664     \nNumber of obs: 4381, groups:  name, 567\nFixed Effects:\n              (Intercept)  bs(centered_age, df = 3)1  \n                  0.72236                    0.13814  \nbs(centered_age, df = 3)2  bs(centered_age, df = 3)3  \n                  0.01667                   -0.20310  \n\n\n\n\nCode\nhit &lt;- hit |&gt; \n  group_by(name) |&gt; \n  mutate(\n    lagged_ops = lag(ops),\n    mean_ops = mean(ops[season &lt; 2024])\n  ) |&gt; \n  ungroup() |&gt; \n  mutate(population_ops = mean(ops[season &lt; 2024]))\n\n\n\n\nCode\nhit$pred_ops &lt;- predict(model, hit)\n\n\n\n\nCode\nhit |&gt; \n  filter(season == 2024) |&gt; \n  select(player = name, contains(\"ops\")) |&gt; \n  pivot_longer(-c(player, ops)) |&gt; \n  group_by(name) |&gt; \n  summarize(\n    rmse = rmse_vec(ops, value),\n    r2 = rsq_trad_vec(ops, value)\n  ) |&gt; \n  arrange(rmse)\n\n\n# A tibble: 4 × 3\n  name             rmse      r2\n  &lt;chr&gt;           &lt;dbl&gt;   &lt;dbl&gt;\n1 pred_ops       0.0937  0.342 \n2 mean_ops       0.106   0.165 \n3 lagged_ops     0.106   0.153 \n4 population_ops 0.119  -0.0641"
+  },
+  {
+    "objectID": "posts/first-post/index.html",
+    "href": "posts/first-post/index.html",
+    "title": "MLB player aging",
+    "section": "",
+    "text": "Study the aging of MLB player performance\nReveal the bias of estimating aging curves with simple aggregation\nDemonstrate a statistics model for aging using splines and mixed effects modeling\nShow some players whose aging curves are unusual or exceptional"
+  },
+  {
+    "objectID": "posts/first-post/index.html#visualize-the-spline-functions",
+    "href": "posts/first-post/index.html#visualize-the-spline-functions",
+    "title": "MLB player aging",
+    "section": "Visualize the spline functions",
+    "text": "Visualize the spline functions\n\n\nCode\nbind_cols(\n  hit |&gt; \n    select(age),\n  hit$centered_age |&gt; \n    bs(3)\n) |&gt; \n  pivot_longer(-age, names_to = \"spline\") |&gt; \n  ggplot() + aes(age, value, color = spline) + geom_line()"
+  },
+  {
+    "objectID": "posts/first-post/index.html#fixed-effects",
+    "href": "posts/first-post/index.html#fixed-effects",
+    "title": "MLB player aging",
+    "section": "Fixed effects",
+    "text": "Fixed effects\nThese coefficients are what form the modeled aging curve.\n\n\nCode\nmodel1 |&gt; \n  tidy(\"fixed\") |&gt; \n  mutate(across(where(is.numeric), \\(x) round(x, 3))) |&gt; \n  tabulate()"
+  },
+  {
+    "objectID": "posts/first-post/index.html#random-effects",
+    "href": "posts/first-post/index.html#random-effects",
+    "title": "MLB player aging",
+    "section": "Random effects",
+    "text": "Random effects\nThe random effect intercept is the +/- of each player’s aging curve relative to the mean player. Unsurprisingly, tabulating these players by decreasing coefficients lists the greatest hitters of the era.\nYou may wish to sort this table by estimate or search for a player name in the level search box.\n\n\nCode\nmodel1 |&gt; \n  tidy(\"ran_vals\") |&gt; \n  mutate(across(where(is.numeric), \\(x) round(x, 3))) |&gt; \n  arrange(desc(estimate)) |&gt; \n  tabulate(columns = list(level = colDef(minWidth = 150, filterable = TRUE)))"
+  },
+  {
+    "objectID": "posts/first-post/index.html#calculating-the-age-of-peack-performance",
+    "href": "posts/first-post/index.html#calculating-the-age-of-peack-performance",
+    "title": "MLB player aging",
+    "section": "Calculating the age of peack performance",
+    "text": "Calculating the age of peack performance\nTo calculate the age of peak OPS, we can numerically solving for the zero of the 1st derivative with respect to age.\n\n\nCode\npredict_ops &lt;- function(age, model) {\n  tibble(centered_age = age - mean(hit$age)) |&gt; \n    predict(object = model, re.form = ~0)\n}\n\ncalc_ops_deriv &lt;- function(age, model) {\n  partial(predict_ops, model = model) |&gt; # now a function of only age\n    fderiv(age)\n}\n\ncalc_zero_deriv &lt;- function(model) {\n  partial(calc_ops_deriv, model = model) |&gt; # now a function of only age\n    fzero(x = 30) |&gt; \n    pluck(\"x\")\n}\n\ncat(\"age of peak performance: \")\n\n\nage of peak performance: \n\n\nCode\nmodel1 |&gt; \n  calc_zero_deriv() |&gt; \n  cat()\n\n\n26.61573"
+  },
+  {
+    "objectID": "posts/first-post/index.html#players-aging-gracefully",
+    "href": "posts/first-post/index.html#players-aging-gracefully",
+    "title": "MLB player aging",
+    "section": "Players aging gracefully",
+    "text": "Players aging gracefully\nHere are the aging curves for the 16 players with the slowing aging. Nelson Cruz and Adrian Beltre have the largest positive slopes, and this fits their reputation as late-bloomers. Jim Thome and David Ortiz remained star players into their late 30’s and early 40’s. Jose Altuve and Freddie Freeman are still active players, but are posting peak stats in their mid-30’s.\nBecause I only included data from 2005 - 2023 in my analysis, the early years of some player’s careers are missing.\n\n\nCode\ncf |&gt; \n  slice_max(estimate, n = 16, with_ties = FALSE) |&gt; \n  pull(level) |&gt; \n  predict_player(model2)"
+  },
+  {
+    "objectID": "posts/first-post/index.html#players-aging-rapidly",
+    "href": "posts/first-post/index.html#players-aging-rapidly",
+    "title": "MLB player aging",
+    "section": "Players aging rapidly",
+    "text": "Players aging rapidly\nHere are the aging curves for the 16 players with the most rapid aging. Perhaps speculation on my part, but many of these players were pure power hitters with stout and muscular builds.\nIn many cases, these were players with All-Star 20’s, but average or below-average 30’s.\n\n\nCode\ncf |&gt; \n  slice_min(estimate, n = 16, with_ties = FALSE) |&gt; \n  pull(level) |&gt; \n  predict_player(model2)"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "Arthur Andrews",
+    "section": "",
+    "text": "This is my blog, mostly about baseball statistics."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Posts",
+    "section": "",
+    "text": "MLB player aging\n\n\n\n\n\n\n\n\n\n\n\nArthur Andrews\n\n\n\n\n\n\n\n\n\n\n\n\n2024-2024 Offseason’s Free Agent Outfielders\n\n\n\n\n\n\n\n\n\n\n\nArthur Andrews\n\n\n\n\n\n\n\n\n\n\n\n\nHow good is the model?\n\n\n\n\n\n\n\n\n\n\n\nArthur Andrews\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/free-agent-outfielders/index.html",
+    "href": "posts/free-agent-outfielders/index.html",
+    "title": "2024-2024 Offseason’s Free Agent Outfielders",
+    "section": "",
+    "text": "library(tidyverse)\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.4     ✔ readr     2.1.5\n✔ forcats   1.0.0     ✔ stringr   1.5.1\n✔ ggplot2   3.5.1     ✔ tibble    3.2.1\n✔ lubridate 1.9.3     ✔ tidyr     1.3.1\n✔ purrr     1.0.2     \n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\nℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors\n\nlibrary(lme4)\n\nLoading required package: Matrix\n\nAttaching package: 'Matrix'\n\nThe following objects are masked from 'package:tidyr':\n\n    expand, pack, unpack\n\nlibrary(splines)\nlibrary(geomtextpath)\n\nWarning: package 'geomtextpath' was built under R version 4.4.2\n\n\n\ntheme_set(theme_bw())\n\n\nload(\"../../data/ops_models.RData\")\nload(\"../../data/mlb_team_colors.RData\")\n#load(\"../../data/hitting_stats.RData\")\n\n\nsource(\"../../scripts/tabulate_mlb.R\")\n\n\niq &lt;- read_csv(\"data-inquirer-outfielders.csv\", skip = 4) |&gt; \n  mutate(\n    name = name |&gt; \n      str_replace(\"Hernandez\", \"Hernández\") |&gt; \n      str_replace(\"O’Neill\", \"O'Neill\")\n  )\n\nRows: 10 Columns: 5\n── Column specification ────────────────────────────────────────────────────────\nDelimiter: \",\"\nchr (3): name, team, salary\ndbl (2): age, ops\n\nℹ Use `spec()` to retrieve the full column specification for this data.\nℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.\n\n\n\nto &lt;- \"Tyler O'Neill\"\nhit_to &lt;- hit |&gt; \n  filter(n_seasons &gt;= 5 | name == to)\n\n\nform &lt;- formula(model2)\nmodel3 &lt;- lmer(form, hit_to, weights = hit_to$pa/700)\n\nWarning in checkConv(attr(opt, \"derivs\"), opt$par, ctrl = control$checkConv, :\nModel failed to converge with max|grad| = 0.00227006 (tol = 0.002, component 1)\n\n\n\nof &lt;- hit_to |&gt; \n  filter(name %in% iq$name) |&gt; \n  mutate(season = as.numeric(season))\n\n# create data frame for future years\n\nof_2024 &lt;- of |&gt; \n  filter(season == 2024)\n\nof_future &lt;- of_2024 |&gt; \n  select(-season) |&gt; \n  expand_grid(season = c(2025, 2026)) |&gt; \n  mutate(\n    across(c(age, centered_age), \\(x) x + season - 2024)\n  ) |&gt; \n  select(name, id, position, season, age, centered_age)\n\nof &lt;- of |&gt; \n  bind_rows(of_future)\n\n# predict ops for future\n\nof$pred_ops &lt;- predict(model3, of)\n\n\nof |&gt; \n  filter(season == 2024) |&gt; \n  select(name, player_id = id, team_name, team_id, season, ops) |&gt; \n  tabulate_players()\n\n\n\n\n\n\n# it will be easier to tabulate if there is only most recent team name\nof &lt;- of |&gt; \n  group_by(name) |&gt; \n  mutate(across(c(team_name, team_id), \\(x) x[season == 2024])) |&gt; \n  ungroup()\n\n\nof_wide &lt;- of |&gt; \n  filter(season %in% 2024:2026) |&gt; \n  mutate(value = if_else(season == 2024, ops, pred_ops)) |&gt; \n  select(name, player_id = id, team_name, team_id, season, value) |&gt; \n  pivot_wider(names_from = season, names_prefix = \"ops_\") |&gt; \n  arrange(desc(ops_2025))\n\n\nof_wide |&gt; \n  tabulate_players(\n    more_columns = list(\n      ops_2024 = colDef(\"2024\", cell = label_hitting_stat),\n      ops_2025 = colDef(\"2025\", cell = label_hitting_stat),\n      ops_2026 = colDef(\"2026\", cell = label_hitting_stat)\n    ),\n    columnGroups = list(\n      colGroup(\"actual ops\", \"ops_2024\"),\n      colGroup(\"predicted ops\", c(\"ops_2025\", \"ops_2026\"))\n    )\n  )\n\n\n\n\n\n\nof |&gt; \n  group_by(name) |&gt; mutate(team_name = team_name[season == 2024]) |&gt; ungroup() |&gt; \n  ggplot() +\n  aes(season, pred_ops, color = team_name, label = name, group = name) +\n  geom_textpath() +\n  scale_color_manual(values = team_palette) +\n  theme(legend.position = \"none\")\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nof |&gt; \n  filter(!name %in% c(\"Jason Heyward\", \"Juan Soto\")) |&gt; \n  group_by(name) |&gt; mutate(team_name = team_name[season == 2024]) |&gt; ungroup() |&gt; \n  ggplot() +\n  aes(season, pred_ops, color = team_name, label = name, group = name) +\n  geom_textpath() +\n  scale_color_manual(values = team_palette) +\n  theme(legend.position = \"none\")"
+  }
+]
