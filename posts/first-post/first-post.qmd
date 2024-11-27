@@ -115,7 +115,7 @@ hit <- hit |>
 hit |> 
   group_by(season) |> 
   summarize(rows = n(), hitters = n_distinct(id)) |> 
-  tabulate(defaultPageSize = Inf)
+  tabulate(defaultPageSize = 100)
 ```
 
 

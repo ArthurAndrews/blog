@@ -57,22 +57,29 @@ hitter <- hitter |>
       as_date(),
      age = (mid_season - birth_date) |> 
       as.numeric(units = "days") |>
-      divide_by(365.25)
+      divide_by(365.25),
+    across(c(avg, obp, slg, ops), as.numeric),
+    team_id = team_link |> 
+      str_sub(15, 17) |> 
+      as.numeric(),
+    ab = at_bats, pa = plate_appearances, name = player_full_name, id = player_id
   )
 
 # smaller set of columns
 hit <- hitter |> 
   select(
-    id = player_id, name = player_full_name, position, height, weight,
-    season, team_name, ab = at_bats, pa = plate_appearances, age, avg, obp, slg, ops
+    season, 
+    id, name, position, height, weight,
+    team_name, team_id,
+    ab, pa, age, avg, obp, slg, ops
   ) |> 
   arrange(id, season) |> 
   group_by(id) |> 
   mutate(n_seasons = n_distinct(season)) |> 
   ungroup() |> 
   mutate(
-    across(c(avg:ops), as.numeric),
-    centered_age = age - mean(age)
+    mean_age = mean(age),
+    centered_age = age - mean_age
   )
 
 # save

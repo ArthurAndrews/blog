@@ -1,0 +1,138 @@
+---
+title: "2024-2024 Offseason's Free Agent Outfielders"
+author: "Arthur Andrews"
+editor: source
+fig-format: svg
+embed-resources: true
+---
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(splines)
+library(geomtextpath)
+```
+
+```{r}
+theme_set(theme_bw())
+```
+
+```{r}
+load("../../data/ops_models.RData")
+load("../../data/mlb_team_colors.RData")
+#load("../../data/hitting_stats.RData")
+```
+
+```{r}
+source("../../scripts/tabulate_mlb.R")
+```
+
+```{r}
+iq <- read_csv("data-inquirer-outfielders.csv", skip = 4) |> 
+  mutate(
+    name = name |> 
+      str_replace("Hernandez", "Hernández") |> 
+      str_replace("O’Neill", "O'Neill")
+  )
+```
+
+```{r}
+iq
+```
+
+
+
+```{r}
+to <- "Tyler O'Neill"
+hit_to <- hit |> 
+  filter(n_seasons >= 5 | name == to)
+```
+
+```{r}
+form <- formula(model2)
+model3 <- lmer(form, hit_to, weights = hit_to$pa/700)
+```
+
+```{r}
+of <- hit_to |> 
+  filter(name %in% iq$name) |> 
+  mutate(season = as.numeric(season))
+
+of_2024 <- of |> 
+  filter(season == 2024)
+
+of_future <- of_2024 |> 
+  select(-season) |> 
+  expand_grid(season = c(2025, 2026)) |> 
+  mutate(
+    across(c(age, centered_age), \(x) x + season - 2024)
+  ) |> 
+  select(name, id, position, season, age, centered_age)
+
+of <- of |> 
+  bind_rows(of_future)
+
+of$pred_ops <- predict(model3, of)
+```
+
+```{r}
+of <- of |> 
+  group_by(name) |> 
+  mutate(across(c(team_name, team_id), \(x) x[season == 2024])) |> 
+  ungroup()
+```
+
+
+```{r}
+of_wide <- of |> 
+  filter(season %in% 2024:2026) |> 
+  mutate(value = if_else(season == 2024, ops, pred_ops)) |> 
+  select(name, player_id = id, team_name, team_id, season, value) |> 
+  pivot_wider(names_from = season, names_prefix = "ops_") |> 
+  arrange(desc(ops_2025))
+```
+
+```{r}
+of_wide |> 
+  tabulate_players(
+    more_columns = list(
+      ops_2024 = colDef("2024", cell = label_hitting_stat),
+      ops_2025 = colDef("2025", cell = label_hitting_stat),
+      ops_2026 = colDef("2026", cell = label_hitting_stat)
+    ),
+    columnGroups = list(
+      colGroup("actual ops", "ops_2024"),
+      colGroup("predicted ops", c("ops_2025", "ops_2026"))
+    )
+  )
+```
+
+
+
+```{r}
+#| fig-width: 10
+#| fig-height: 8
+
+of |> 
+  group_by(name) |> mutate(team_name = team_name[season == 2024]) |> ungroup() |> 
+  ggplot() +
+  aes(season, pred_ops, color = team_name, label = name, group = name) +
+  geom_textpath() +
+  scale_color_manual(values = team_palette) +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| fig-width: 10
+#| fig-height: 8
+
+of |> 
+  filter(!name %in% c("Jason Heyward", "Juan Soto")) |> 
+  group_by(name) |> mutate(team_name = team_name[season == 2024]) |> ungroup() |> 
+  ggplot() +
+  aes(season, pred_ops, color = team_name, label = name, group = name) +
+  geom_textpath() +
+  scale_color_manual(values = team_palette) +
+  theme(legend.position = "none")
+```
+

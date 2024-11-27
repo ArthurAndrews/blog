@@ -1,0 +1,118 @@
+Arizona Diamondbacks
+#A71930, #E3D4AD, #000000
+
+  
+Atlanta Braves
+#13274F, #CE1141, #EAAA00
+
+  
+Baltimore Orioles
+#DF4601, #000000, #9E1A1A
+
+  
+Boston Red Sox
+#BD3039, #0D2B56, #FFFFFF
+
+  
+Chicago White Sox
+#27251F, #C4CED4
+
+ 
+Chicago Cubs
+#0E3386, #CC3433
+
+ 
+Cincinnati Reds
+#C6011F, #000000, #FFFFFF
+
+  
+Cleveland Guardians
+#E31937, #0C2340, #FFFFFF
+
+  
+Colorado Rockies
+#33006F, #C4CED4, #FFFFFF
+
+  
+Detroit Tigers
+#0C2340, #FA4616, #FFFFFF
+
+  
+Houston Astros
+#002D62, #EB6E1F, #FFFFFF
+
+  
+Kansas City Royals
+#004687, #BD9B60, #FFFFFF
+
+  
+Los Angeles Angels
+#BA0021, #003263, #FFFFFF
+
+  
+Los Angeles Dodgers
+#005A9C, #FFFFFF
+
+ 
+Miami Marlins
+#00A3E0, #EF3340, #000000, #FFFFFF
+
+   
+Milwaukee Brewers
+#0A2351, #B6922C, #FFFFFF
+
+  
+Minnesota Twins
+#002B5C, #D31145, #FFFFFF
+
+  
+New York Yankees
+#0C2340, #FFFFFF
+
+ 
+New York Mets
+#002D72, #FF5910, #FFFFFF
+
+  
+Oakland Athletics
+#003831, #EFB21E, #FFFFFF
+
+  
+Philadelphia Phillies
+#E81828, #002D72, #FFFFFF
+
+  
+Pittsburgh Pirates
+#FDB827, #27251F, #FFFFFF
+
+  
+San Diego Padres
+#2F241D, #FEC325, #7F411C, #A0AAB2, #FFFFFF
+
+    
+San Francisco Giants
+#FD5A1E, #27251F, #8B6F4E, #FFFFFF
+
+   
+Seattle Mariners
+#0C2C56, #005C5C, #C4CED4, #FFFFFF
+
+   
+St. Louis Cardinals
+#C41E3A, #0C2340, #FEDB00, #FFFFFF
+
+   
+Tampa Bay Rays
+#092C5C, #8FBCE6, #F5D130, #FFFFFF
+
+   
+Texas Rangers
+#003278, #C0111F, #FFFFFF
+
+  
+Toronto Blue Jays
+#134A8E, #1D2D5C, #E8291C, #FFFFFF
+
+   
+Washington Nationals
+#AB0003, #14225A, #FFFFFF

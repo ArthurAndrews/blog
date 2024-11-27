@@ -36,6 +36,7 @@ model <- lmer(form, data = hit |> filter(season < 2024))
 model
 ```
 
+
 ```{r}
 hit <- hit |> 
   group_by(name) |> 
