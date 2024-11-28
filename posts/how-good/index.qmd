@@ -2,6 +2,7 @@
 title: How good is the model?
 author: Arthur Andrews
 date: 10/1/2024
+image: /images/other/herzog_spray_chart.jpg
 format: html
 editor: source
 embed-resources: true

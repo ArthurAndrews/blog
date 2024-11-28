@@ -1,6 +1,8 @@
 ---
 title: "2024-2025 Offseason's Free Agent Outfielders"
 author: "Arthur Andrews"
+date: 11/27/2024
+image: "/images/other/Strat-O-Matic The Fantasy League Prequel.jpg"
 editor: source
 fig-format: svg
 embed-resources: true

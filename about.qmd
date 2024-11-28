@@ -1,6 +1,6 @@
 ---
 title: Arthur Andrews
-image: arthur-andrews.jpg
+image: images/other/arthur-andrews.jpg
 about:
   template: jolla
   links:

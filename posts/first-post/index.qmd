@@ -3,6 +3,7 @@ title: A statistical model for MLB player aging
 author: Arthur Andrews
 date: 9/1/2024
 format: html
+image: /images/other/player_aging3.png
 editor: source
 embed-resources: true
 fig-format: svg
