@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ArthurAndrews.github.io/blog/posts/how-good/index.html</loc>
-    <lastmod>2024-11-27T17:43:29.146Z</lastmod>
+    <loc>https://ArthurAndrews.github.io/blog/posts/tools/index.html</loc>
+    <lastmod>2024-11-28T01:03:50.350Z</lastmod>
   </url>
   <url>
-    <loc>https://ArthurAndrews.github.io/blog/posts/first-post/index.html</loc>
+    <loc>https://ArthurAndrews.github.io/blog/posts/free-agent-outfielders/index.html</loc>
+    <lastmod>2024-11-27T21:57:16.205Z</lastmod>
+  </url>
+  <url>
+    <loc>https://ArthurAndrews.github.io/blog/index.html</loc>
     <lastmod>2024-11-27T17:43:29.136Z</lastmod>
   </url>
   <url>
@@ -13,11 +17,11 @@
     <lastmod>2024-11-27T17:43:28.964Z</lastmod>
   </url>
   <url>
-    <loc>https://ArthurAndrews.github.io/blog/index.html</loc>
-    <lastmod>2024-11-27T17:43:29.136Z</lastmod>
+    <loc>https://ArthurAndrews.github.io/blog/posts/first-post/index.html</loc>
+    <lastmod>2024-11-28T01:07:31.581Z</lastmod>
   </url>
   <url>
-    <loc>https://ArthurAndrews.github.io/blog/posts/free-agent-outfielders/index.html</loc>
-    <lastmod>2024-11-27T17:43:29.145Z</lastmod>
+    <loc>https://ArthurAndrews.github.io/blog/posts/how-good/index.html</loc>
+    <lastmod>2024-11-28T01:00:47.932Z</lastmod>
   </url>
 </urlset>

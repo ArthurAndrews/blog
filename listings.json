@@ -2,9 +2,10 @@
   {
     "listing": "/index.html",
     "items": [
-      "/posts/first-post/index.html",
       "/posts/free-agent-outfielders/index.html",
-      "/posts/how-good/index.html"
+      "/posts/how-good/index.html",
+      "/posts/first-post/index.html",
+      "/posts/tools/index.html"
     ]
   }
 ]
