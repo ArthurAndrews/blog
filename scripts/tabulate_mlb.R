@@ -6,13 +6,13 @@ library(htmltools)
 #' Make html for team logo
 #'
 #' @param team_id numeric team id, i.e. New York Yankees == 147
-#' @param style css style; defaults to `css(height = "25px")`
+#' @param style css style
 #' @param ... additional arguments passed to `img()`
 #'
 #' @return for length(team_id) == 1, an img tag; otherwise a character vector of html
-make_team_logo <- function(team_id, style = css(height = "25px"), ...) {
+make_team_logo <- function(team_id, style = css(width = "16px", height = "auto"), ...) {
   if (length(team_id) == 1) {
-    img(src = str_glue("/images/team_logos/{team_id}.svg"), style = style, ...)
+    img(src = str_glue("../../images/team_logos/{team_id}.svg"), style = style, ...)
   } else {
     team_id |> 
       map(make_team_logo, style, ...) |> 
@@ -24,13 +24,13 @@ make_team_logo <- function(team_id, style = css(height = "25px"), ...) {
 #' Make html for player headshot
 #'
 #' @param player_id numeric player id, i.e. Aaron Judge == 592450
-#' @param style css style; defaults to `css(height = "25px")`
+#' @param style css style
 #' @param ... additional arguments passed to `img()`
 #'
 #' @return for length(player_id) == 1, an img tag; otherwise a character vector of html
-make_player_headshot <- function(player_id, style = css(height = "25px"), ...) {
+make_player_headshot <- function(player_id, style = css(width = "22px", height = "auto"), ...) {
   if (length(player_id) == 1) {
-    img(src = str_glue("/images/player_headshots/{player_id}.png"), style = style, ...)
+    img(src = str_glue("../../images/player_headshots/{player_id}.png"), style = style, ...)
   } else {
     player_id |> 
       map(make_player_headshot, style, ...) |> 
@@ -69,10 +69,12 @@ tabulate_players <- function(data, more_columns = NULL, ...) {
   }
   
   cl <- list(
-    team_name = colDef("team"),
-    headshot = colDef("", minWidth = 40, maxWidth = 40, html = TRUE),
-    logo = colDef("", minWidth = 40, maxWidth = 40, html = TRUE),
-    ops = colDef("ops", cell = label_hitting_stat)
+    name = colDef(minWidth = 120),
+    team_name = colDef("team", minWidth = 120),
+    season = colDef(minWidth = 80),
+    headshot = colDef("", minWidth = 40, maxWidth = 40, html = TRUE, align = "center"),
+    logo = colDef("", minWidth = 40, maxWidth = 40, html = TRUE, align = "center"),
+    ops = colDef("ops", minWidth = 80, cell = label_hitting_stat)
   ) |> 
     c(more_columns)
   
@@ -85,4 +87,18 @@ tabulate_players <- function(data, more_columns = NULL, ...) {
       columns = cl,
       ...
     )  
+}
+
+
+show_player <- function(data, name) {
+  span(
+    data |> 
+      filter(name == !!name) |> 
+      pull(id) |> 
+      make_player_headshot(style = NULL),
+    data |> 
+      filter(name == !!name) |> 
+      pull(team_id) |> 
+      make_team_logo(style = css(height = "60px", width = "auto"))
+  )
 }

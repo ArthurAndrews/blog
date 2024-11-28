@@ -1,31 +1,53 @@
 ---
 title: How good is the model?
 author: Arthur Andrews
+date: 10/1/2024
 format: html
 editor: source
 embed-resources: true
 fig-format: svg
 fig-width: 10
 fig-height: 6
-code-fold: show
-code-tools: true
 toc: true
 toc-location: left
 grid: 
   body-width: "9in"
+execute:
+  echo: false
 ---
 
 ```{r}
+#| message: false
+#| warning: false
+
 library(tidyverse)
 library(lme4)
 library(yardstick)
 library(splines)
+library(reactable)
+library(htmltools)
+```
+
+```{r}
+theme_set(theme_bw())
 ```
 
 ```{r}
 load("../../data/ops_models.RData")
-#load("../../data/hitting_stats.RData")
 ```
+
+# Evaluating the player aging model
+
+Previously, we fit a mixed effects model for player ops including
+
+ - splines (to capture the ascent, peak, and descent)
+ - random effects (to capture the variety in player performance)
+
+Let's call it the "PAMS model" for "player aging mixed model with splines".
+
+Let's evaluate its accuracy and benchmark against some similar, non-statistical approaches to forecasting player OPS.
+
+## `lme4` model summary
 
 ```{r}
 form <- formula(model2)
@@ -37,6 +59,34 @@ model <- lmer(form, data = hit |> filter(season < 2024))
 model
 ```
 
+
+# Test data
+
+We will fit the model on data from 2005 - 2023 and test it it on 2024.
+
+```{r}
+#| fig-width: 8
+#| fig-height: 2
+hit |> 
+  count(season) |> 
+  mutate(set = if_else(season == 2024, "test", "train") |> factor(c("train", "test"))) |> 
+  ggplot() + 
+  aes(season, 0, color = set) +
+  geom_point(size = 3) +
+  theme(
+    axis.text.y = element_blank(), 
+    axis.title.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.line.y = element_blank(),
+    legend.position = "top"
+  ) +
+  scale_y_continuous(breaks = NULL, minor_breaks = NULL)
+```
+
+
+# Benchmarks
+
+We will compare the model to three simple benchmarks.  These are described in the table.  Hopefully, the statistical model can show a higher quality of fit than the benchmarks.
 
 ```{r}
 hit <- hit |> 
@@ -54,6 +104,22 @@ hit$pred_ops <- predict(model, hit)
 ```
 
 ```{r}
+key <- tribble(
+  ~name, ~better_name, ~description,
+  "pred_ops", "PAMS model", "mixed model with splines",
+  "mean_ops", "player mean ops", "player's mean OPS pre-2024", 
+  "lagged_ops", "lagged ops", "player's OPS in 2023",
+  "population_ops", "population mean", "mean of all player's OPS"
+)
+```
+
+# Results
+
+
+
+## Quality of fit for the statistical model and three benchmarks
+
+```{r}
 hit |> 
   filter(season == 2024) |> 
   select(player = name, contains("ops")) |> 
@@ -63,6 +129,16 @@ hit |>
     rmse = rmse_vec(ops, value),
     r2 = rsq_trad_vec(ops, value)
   ) |> 
-  arrange(rmse)
+  arrange(rmse) |>
+  left_join(key, by = "name") |> 
+  select(name = better_name, description, rmse, r2) |> 
+  reactable(
+    highlight = TRUE,
+    style = css(fontSize = "90%"),
+    columns = list(
+      rmse = colDef("RMSE", minWidth = 60, format = colFormat(digits = 4)),
+      r2 = colDef("R²", minWidth = 60, format = colFormat(digits = 2))
+    )
+  )
 ```
 

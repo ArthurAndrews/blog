@@ -1,12 +1,21 @@
 ---
-title: "2024-2024 Offseason's Free Agent Outfielders"
+title: "2024-2025 Offseason's Free Agent Outfielders"
 author: "Arthur Andrews"
 editor: source
 fig-format: svg
 embed-resources: true
+execute:
+  echo: false
 ---
 
+# The free agent class
+
+Many teams will be looking at free agent outfielders this season.  The Philadelphia Inquirer highlighted nine of these in their article *Phillies 2025 outfield outlook: Free-agent options, prospect forecast, and more* by Lochlahn March.
+
+
 ```{r}
+#| message: false
+#| warning: false
 library(tidyverse)
 library(lme4)
 library(splines)
@@ -20,15 +29,14 @@ theme_set(theme_bw())
 ```{r}
 load("../../data/ops_models.RData")
 load("../../data/mlb_team_colors.RData")
-#load("../../data/hitting_stats.RData")
 ```
 
 ```{r}
 source("../../scripts/tabulate_mlb.R")
 ```
 
-```{r}
-iq <- read_csv("data-inquirer-outfielders.csv", skip = 4) |> 
+```{r read-inquirer-outfielders}
+iq <- read_csv("data-inquirer-outfielders.csv", skip = 4, show_col_types = FALSE) |> 
   mutate(
     name = name |> 
       str_replace("Hernandez", "Hernández") |> 
@@ -36,21 +44,26 @@ iq <- read_csv("data-inquirer-outfielders.csv", skip = 4) |>
   )
 ```
 
-```{r}
-to <- "Tyler O'Neill"
+```{r tyler}
+to <- "Tyler O'Neill"  # doesn't meet the criteria of n_seasons, but we must include him
 hit_to <- hit |> 
   filter(n_seasons >= 5 | name == to)
 ```
 
-```{r}
+```{r refit-model}
+#| warning: false
 form <- formula(model2)
-model3 <- lmer(form, hit_to, weights = hit_to$pa/700)
+model3 <- lmer(form, hit_to, weights = hit_to$pa / 700)
 ```
 
-```{r}
+```{r construct-future-seasons}
 of <- hit_to |> 
   filter(name %in% iq$name) |> 
-  mutate(season = as.numeric(season))
+  mutate(
+    season = as.numeric(season), 
+    id = id |> set_names(name),
+    team_id = team_id |> set_names(team_name)
+  )
 
 # create data frame for future years
 
@@ -73,24 +86,30 @@ of <- of |>
 of$pred_ops <- predict(model3, of)
 ```
 
-```{r}
+## Table: 2024 Free-Agent Outlfielders and 2024 OPS
+```{r tabulate-inquirer}
 of |> 
   filter(season == 2024) |> 
-  select(name, player_id = id, team_name, team_id, season, ops) |> 
+  mutate(name, player_id = id, team_name, team_id, age = floor(age), ops, .keep = "none") |> 
   tabulate_players()
 ```
 
+# Predicting 2025 and 2026 performance
 
-```{r}
-# it will be easier to tabulate if there is only most recent team name
+It's natural to compare these players' 2024 stats for a judgment of what their 2025 and 2026 might look like.  However, I showed in my previous post that a player's previous season OPS is only weakly predictive of next season's.  
+
+A large portion of OPS variance is unpredictable due to natural variation of hot streaks and slumps, player health, and the baseball's bloops and bounces.  However, we may use the player's age, their full career OPS, and statistics to model their aging curve.  In the same previous post, I show that my model can predict a larger fraction of the variance.
+
+Let's use this model to forecast these outfielder's 2025 and 2026 OPS.  In some cases, the model will rank players substantially differently than their previous season's OPS.  Some players are on a steeper portion of the aging curve, and in some cases, a player's 2024 OPS may be an outlier that the model is suspicious of.
+
+```{r recent-team-name}
 of <- of |> 
   group_by(name) |> 
   mutate(across(c(team_name, team_id), \(x) x[season == 2024])) |> 
   ungroup()
 ```
 
-
-```{r}
+```{r pivot-of}
 of_wide <- of |> 
   filter(season %in% 2024:2026) |> 
   mutate(value = if_else(season == 2024, ops, pred_ops)) |> 
@@ -99,13 +118,16 @@ of_wide <- of |>
   arrange(desc(ops_2025))
 ```
 
-```{r}
+## Table
+### Free-Agent Outfielder 2024 OPS and predicted 2025 & 2025 OPS
+
+```{r tabulate-of}
 of_wide |> 
   tabulate_players(
     more_columns = list(
-      ops_2024 = colDef("2024", cell = label_hitting_stat),
-      ops_2025 = colDef("2025", cell = label_hitting_stat),
-      ops_2026 = colDef("2026", cell = label_hitting_stat)
+      ops_2024 = colDef("2024", minWidth = 80, cell = label_hitting_stat),
+      ops_2025 = colDef("2025", minWidth = 80, cell = label_hitting_stat),
+      ops_2026 = colDef("2026", minWidth = 80, cell = label_hitting_stat)
     ),
     columnGroups = list(
       colGroup("actual ops", "ops_2024"),
@@ -114,7 +136,13 @@ of_wide |>
   )
 ```
 
+## Plotting the model fits
 
+The spline fits of the statistical model shows an aging curve with a player peak typically around age 27.
+
+The player's "intercept" has a large variance, and is largely what captures the variety of player performance.
+
+## All 9 players
 
 ```{r}
 #| fig-width: 10
@@ -126,9 +154,12 @@ of |>
   aes(season, pred_ops, color = team_name, label = name, group = name) +
   geom_textpath() +
   scale_color_manual(values = team_palette) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  labs(y = "predicted OPS") +
+  scale_x_continuous(breaks = sort(unique(of$season)), minor_breaks = NULL)
 ```
 
+## All but Soto
 ```{r}
 #| fig-width: 10
 #| fig-height: 8
@@ -140,6 +171,53 @@ of |>
   aes(season, pred_ops, color = team_name, label = name, group = name) +
   geom_textpath() +
   scale_color_manual(values = team_palette) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  labs(y = "predicted OPS") +
+  scale_x_continuous(breaks = sort(unique(of$season)), minor_breaks = NULL)
 ```
 
+# Highlighting some specific players
+
+::: {.grid}
+
+::: {.g-col-4}
+
+## Juan Soto
+
+```{r}
+of |> 
+  filter(season == 2024) |> 
+  show_player("Juan Soto")
+```
+
+
+Soto is obviously on another level than the other players in this group.  His 2024 season was even better than might have expected, and the model predicts continued elite performance.
+
+:::
+::: {.g-col-4}
+
+## Jesse Winker
+
+```{r}
+of |> 
+  filter(season == 2024) |> 
+  show_player("Jesse Winker")
+```
+
+Winker is predicted to improve on his 2024 season, and may come at a lower cost than Hernández or Santander.  
+
+:::
+::: {.g-col-4}
+
+## Jurickson Profar
+
+```{r}
+of |> 
+  filter(season == 2024) |> 
+  show_player("Jurickson Profar")
+```
+
+Profar had an excellent 2024, but the model predicts a regression in 2025.  Was 2024 an outlier, or did he find something new in his swing?
+
+:::
+:::

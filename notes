@@ -1,0 +1,2 @@
+quarto publish gh-pages
+quarto render

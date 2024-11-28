@@ -1,0 +1,26 @@
+---
+title: Tools
+author: Arthur Andrews
+date: 8/1/2024
+editor: source
+---
+
+These are the tools I plan to use the most in making this blog.
+
+::: {layout-ncol=4}
+
+![](../../images/other/R_logo.png){width="50%"}
+
+![](../../images/other/baseballr_logo.png){width="50%"}
+
+![](../../images/other/logo-quarto.png){width="50%"}
+
+![](../../images/other/github-pages-examples.png){width="50%"}
+
+::::
+
+  - **R** - *programming language*
+  - **baseballr** - *an R interface to MLB data*
+  - **quarto** - *publishing data-rich documents from code*
+  - **GitHub Pages** - *hosting code and web pages*
+

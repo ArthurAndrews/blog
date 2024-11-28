@@ -1,6 +1,7 @@
 ---
-title: MLB player aging
+title: A statistical model for MLB player aging
 author: Arthur Andrews
+date: 9/1/2024
 format: html
 editor: source
 embed-resources: true
@@ -18,6 +19,8 @@ grid:
 
 # Goals
 
+These are my goals for this initial work on this blog.  I have a few other ideas for how to use this model to do some interesting things, and those will be the subjects of future posts.
+
   - Study the aging of MLB player performance 
   - Reveal the bias of estimating aging curves with simple aggregation
   - Demonstrate a statistics model for aging using splines and mixed effects modeling
@@ -25,27 +28,7 @@ grid:
   
 # Purpose
 
-This is a hobby project.
-
-# Tools
-
-::: {layout-ncol=4}
-
-![](/images/other/R_logo.png){width="50%"}
-
-![](/images/other/baseballr_logo.png){width="50%"}
-
-![](/images/other/logo-quarto.png){width="50%"}
-
-![](/images/other/github-pages-examples.png){width="50%"}
-
-::::
-
-  - **R** - *programming language*
-  - **baseballr** - *an R interface to MLB data*
-  - **quarto** - *publishing data-rich documents from code*
-  - **GitHub Pages** - *hosting code and web pages*
-
+This is a hobby project.  I am not interested in doing exhaustive work in any one area.  I will do the sort of lighter analysis that is fun to me.  I will refer elegant models, statistical models (not black box machine learning), and nice graphics.
 
 # Code
 
